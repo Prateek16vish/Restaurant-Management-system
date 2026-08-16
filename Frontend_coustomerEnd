@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QROrder | Customer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:Arial,Helvetica,sans-serif;background:#f7f6f2;color:#151515;padding-bottom:110px}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+header{height:78px;background:#101725;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 5%;position:sticky;top:0;z-index:50}
+.logo-area{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;background:#ffa500;color:#111;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:bold}
+.logo-text h2{font-size:20px}.logo-text p{font-size:10px;color:#aeb5c2;margin-top:3px}
+.live{color:#40df7a;font-size:13px;font-weight:bold}
+.container{width:92%;max-width:1100px;margin:25px auto}
+.table-bar{background:#101725;color:white;border-radius:15px;padding:18px;display:flex;align-items:center;justify-content:space-between}
+.table-info small{color:#6fa4e7;font-size:10px}
+.table-buttons{display:flex;gap:10px;align-items:center;margin-top:7px}
+.current-table{background:#ffa500;color:#111;padding:12px 18px;border-radius:9px;font-weight:bold}
+.change-table{background:#202b3d;color:#fff;border:1px solid #4c596c;padding:11px 15px;border-radius:8px}
+.my-orders-btn{background:#fff;color:#151515;border:1px solid #ddd;padding:11px 15px;border-radius:8px;font-weight:bold}
+.fixed-my-orders{
+    position:fixed;
+    right:24px;
+    bottom:88px;
+    z-index:201;
+    min-width:190px;
+    box-shadow:0 10px 25px rgba(0,0,0,.18);
+}
+.fixed-my-orders:hover{border-color:#ffa500;background:#fff8ed;transform:translateY(-2px)}
+
+.my-orders-btn:hover{border-color:#ffa500;background:#fff8ed}
+.my-orders-btn span{display:inline-flex;min-width:21px;height:21px;align-items:center;justify-content:center;background:#ffa500;border-radius:50%;font-size:11px;margin-left:4px}
+.my-orders-list{display:flex;flex-direction:column;gap:12px}
+.my-order-card{border:1px solid #e2e2e2;border-radius:13px;padding:16px;background:#fff}
+.my-order-top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.my-order-token{font-size:22px;font-weight:bold;color:#151515}
+.my-order-status{padding:7px 11px;border-radius:18px;background:#e9f8ef;color:#15934b;font-size:12px;font-weight:bold}
+.my-order-status.received{background:#fff4d6;color:#a96b00}
+.my-order-status.preparing{background:#e8f0ff;color:#315fa8}
+.my-order-status.ready{background:#dff8e8;color:#15934b}
+.my-order-status.completed{background:#e8e8e8;color:#555}
+.my-order-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;background:#f7f7f7;border-radius:10px;padding:11px;font-size:13px}
+.my-order-items{margin-top:10px;color:#555;font-size:13px;line-height:1.6}
+.my-order-total{margin-top:10px;font-weight:bold;display:flex;justify-content:space-between}
+.order-progress{display:flex;align-items:center;margin:17px 0 4px}
+.progress-step{flex:1;text-align:center;position:relative;font-size:10px;color:#999}
+.progress-step:before{content:"";display:block;width:24px;height:24px;margin:0 auto 5px;border-radius:50%;background:#ddd;color:#777;line-height:24px;position:relative;z-index:2}
+.progress-step:after{content:"";height:3px;background:#ddd;position:absolute;top:11px;left:50%;width:100%;z-index:1}
+.progress-step:last-child:after{display:none}
+.progress-step.done{color:#15934b;font-weight:bold}
+.progress-step.done:before{background:#20a85a;color:#fff}
+.progress-step.done:after{background:#20a85a}
+.my-orders-empty{text-align:center;padding:35px 10px;color:#777}
+@media(max-width:600px){.table-buttons{flex-wrap:wrap}.my-order-meta{grid-template-columns:1fr}}
+
+.connected{color:#69f29b;font-size:13px;font-weight:bold}
+.table-selector{display:none;background:#fff;padding:20px;margin-top:15px;border-radius:15px;box-shadow:0 5px 25px rgba(0,0,0,.1)}
+.table-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin-top:15px}
+.table-grid button{padding:10px 4px;background:#fafafa;border:1px solid #ddd;border-radius:8px}
+.table-grid button:hover,.table-grid button.selected{background:#ffa500;border-color:#ffa500}
+.section-title{margin:20px 0 10px;font-weight:bold}
+.order-type{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.type-card{background:#fff;border:2px solid #ddd;border-radius:15px;padding:18px;display:flex;align-items:center;gap:15px;transition:.2s;cursor:pointer}
+.type-card:hover{border-color:#ffbd4d}.type-card.active{border-color:#ff9d00;background:#fff8ed}
+.type-icon{width:48px;height:48px;border-radius:10px;background:#f3f3f3;display:flex;align-items:center;justify-content:center;font-size:25px}
+.type-card.active .type-icon{background:#ffa500}.type-card h3{font-size:16px}.type-card p{color:#777;font-size:12px;margin-top:4px}
+.radio{margin-left:auto;width:22px;height:22px;border:2px solid #ccc;border-radius:50%}
+.type-card.active .radio{background:#e67c00;border:5px solid white;box-shadow:0 0 0 2px #e67c00}
+.menu-heading{margin-top:30px}.menu-heading small{color:#c87900;font-weight:bold;letter-spacing:1px}
+.menu-heading h1{font-size:48px;margin:8px 0}.menu-heading h1 span{color:#df8100}.menu-heading p{color:#777}
+.search{background:#fff;border:1px solid #ddd;border-radius:12px;padding:12px 15px;margin:22px 0;display:flex;gap:10px;align-items:center}
+.search input{width:100%;border:none;outline:none;font-size:15px}.clear{display:none;border:0;background:#eee;border-radius:7px;padding:5px 9px}
+.categories{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.category{padding:10px 17px;background:#fff;border:1px solid #ddd;border-radius:20px}
+.category:hover{border-color:#ffa500}.category.active{background:#151515;color:#fff;border-color:#151515}
+.menu-header{display:flex;align-items:center;justify-content:space-between}
+.menu-header h2{font-size:22px}.menu-header small{color:#777}
+.food-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:15px}
+.food-card{background:#fff;border-radius:15px;overflow:hidden;border:1px solid #e3e3e3;transition:.2s}
+.food-card:hover{transform:translateY(-3px);box-shadow:0 7px 20px rgba(0,0,0,.08)}
+.food-image{height:150px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:55px}
+.food-content{padding:15px}.food-content h3{margin-bottom:6px}.food-content p{font-size:12px;color:#777;min-height:32px}
+.food-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.price{font-weight:bold;font-size:17px}.add-btn{background:#ffa500;border:0;padding:9px 14px;border-radius:8px;font-weight:bold}
+.add-btn.added{background:#21a65b;color:#fff}
+.empty{text-align:center;padding:50px;color:#777}
+.cart-fab{position:fixed;right:24px;bottom:24px;z-index:200;background:#151515;color:#fff;border:0;border-radius:18px;padding:16px 22px;min-width:190px;box-shadow:0 12px 30px rgba(0,0,0,.28);font-weight:bold;font-size:16px}
+.cart-fab:hover{transform:translateY(-2px);background:#292929}
+.cart-fab .badge{display:inline-flex;min-width:25px;height:25px;align-items:center;justify-content:center;background:#ffa500;color:#111;border-radius:50%;margin-left:7px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;padding:15px}
+.modal-box{width:95%;max-width:560px;max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:25px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.close{border:0;background:#eee;border-radius:50%;width:34px;height:34px}
+.cart-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 0;border-bottom:1px solid #eee}
+.cart-item-info{flex:1}.cart-item-info h4{margin-bottom:4px}.cart-item-info p{color:#777;font-size:12px}
+.qty{display:flex;align-items:center;gap:8px}.qty button{width:30px;height:30px;border:0;background:#eee;border-radius:6px;font-weight:bold}
+.cart-total{display:flex;justify-content:space-between;margin:20px 0;font-size:20px;font-weight:bold}
+.primary{width:100%;padding:14px;border:0;border-radius:10px;background:#ffa500;font-weight:bold;font-size:15px}
+.primary:hover{background:#e78f00}
+.form-group{margin-bottom:15px}.form-group label{display:block;font-size:13px;font-weight:bold;margin-bottom:6px}
+textarea{width:100%;height:100px;padding:12px;border:1px solid #ddd;border-radius:8px;resize:none;outline:none}
+.order-details{background:#f8f8f8;border-radius:12px;padding:15px;margin:20px 0}
+.detail-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #ddd}.detail-row:last-child{border:0}
+.confirmation{display:none;text-align:center;padding:35px 10px}
+.success{width:85px;height:85px;margin:auto;border-radius:50%;background:#dff8e8;color:#19a957;display:flex;align-items:center;justify-content:center;font-size:45px}
+.token-box{max-width:380px;margin:25px auto;padding:22px;background:#101725;color:#fff;border-radius:15px}
+.token{color:#ffa500;font-size:42px;font-weight:bold;letter-spacing:3px;margin:8px 0}
+.confirm-items{max-width:500px;margin:20px auto;background:#fff;border:1px solid #ddd;border-radius:14px;padding:15px;text-align:left}
+.confirm-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}
+.status{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:18px 0}.status span{padding:8px 13px;border-radius:20px;background:#e9f8ef;color:#14994b;font-size:12px}
+.stars{display:flex;justify-content:center;gap:8px;margin:15px 0}.star{font-size:32px;color:#ccc;cursor:pointer}.star.selected{color:#ffad00}
+.satisfaction{max-width:500px;margin:20px auto;background:#fff;border:1px solid #ddd;border-radius:15px;padding:22px}
+.thank{display:none;color:#15934b;font-weight:bold;margin-top:10px}
+.toast{position:fixed;top:95px;right:20px;z-index:1000;background:#151515;color:#fff;padding:15px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);transform:translateX(130%);opacity:0;transition:.35s}
+.toast.show{transform:translateX(0);opacity:1}
+@media(max-width:800px){.food-grid{grid-template-columns:repeat(2,1fr)}.table-grid{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:600px){header{padding:0 15px}.container{width:94%}.table-bar{flex-direction:column;align-items:flex-start;gap:12px}.connected{align-self:flex-end}.order-type{grid-template-columns:1fr}.menu-heading h1{font-size:38px}.food-grid{grid-template-columns:1fr}.table-grid{grid-template-columns:repeat(4,1fr)}.cart-fab{right:14px;bottom:14px;min-width:0;width:calc(100% - 28px);border-radius:14px}.fixed-my-orders{right:14px;bottom:82px;min-width:0;width:calc(100% - 28px);border-radius:14px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-area"><div class="logo">QR</div><div class="logo-text"><h2>QROrder</h2><p>Restaurant Ordering System</p></div></div>
+  <div class="live">● Live</div>
+</header>
+
+<div class="container" id="customerPage">
+  <div class="table-bar">
+    <div class="table-info">
+      <small>CURRENT TABLE</small>
+      <div class="table-buttons">
+        <div class="current-table" id="currentTable">TABLE T01</div>
+        <button class="change-table" onclick="toggleTables()">✎ Change Table</button>
+        
+      </div>
+    </div>
+    <div class="connected">● QR CONNECTED</div>
+  </div>
+
+  <div class="table-selector" id="tableSelector">
+    <h3>Select Your Table</h3>
+    <div class="table-grid" id="tableGrid"></div>
+  </div>
+
+  <div class="section-title">How would you like your order?</div>
+  <div class="order-type">
+    <div class="type-card active" id="dineCard" onclick="selectOrderType('Dine In')"><div class="type-icon">🍽️</div><div><h3>Dine In</h3><p>Enjoy your meal at the restaurant</p></div><div class="radio"></div></div>
+    <div class="type-card" id="takeCard" onclick="selectOrderType('Take Away')"><div class="type-icon">🛍️</div><div><h3>Take Away</h3><p>Pack your order and take it with you</p></div><div class="radio"></div></div>
+  </div>
+
+  <div class="menu-heading"><small>DINE IN / TAKE AWAY</small><h1>Today's <span>Menu</span></h1><p>Order directly from your table or choose takeaway.</p></div>
+
+  <div class="search">🔎<input id="searchInput" placeholder="Search dishes..." oninput="displayFoods()"><button class="clear" id="clearBtn" onclick="clearSearch()">✕</button></div>
+
+  <div class="categories">
+    <button class="category active" onclick="filterCategory('All',this)">All</button>
+    <button class="category" onclick="filterCategory('Starters',this)">Starters</button>
+    <button class="category" onclick="filterCategory('South Indian',this)">South Indian</button>
+    <button class="category" onclick="filterCategory('Main Course',this)">Mains</button>
+    <button class="category" onclick="filterCategory('Breads',this)">Breads</button>
+    <button class="category" onclick="filterCategory('Drinks',this)">Drinks</button>
+    <button class="category" onclick="filterCategory('Desserts',this)">Desserts</button>
+  </div>
+
+  <div class="menu-header"><div><h2>Explore Menu</h2><small id="itemCount"></small></div></div>
+  <div class="food-grid" id="foodGrid"></div>
+</div>
+
+<button class="my-orders-btn fixed-my-orders" id="myOrdersButton" onclick="openMyOrders()" style="display:none">📋 My Orders <span id="myOrdersCount">0</span></button>
+<button class="cart-fab" onclick="openCart()">🛒 Cart <span id="cartCount" class="badge">0</span> · ₹<span id="cartAmount">0</span></button>
+
+
+<div class="modal" id="myOrdersModal" onclick="if(event.target===this)closeMyOrders()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>📋 My Orders</h2>
+      <button class="close" onclick="closeMyOrders()">✕</button>
+    </div>
+    <p style="color:#777;font-size:13px;margin-bottom:15px">
+      View your token number, table number, items, total and current order status.
+    </p>
+    <div id="myOrdersList" class="my-orders-list"></div>
+  </div>
+</div>
+
+<div class="modal" id="cartModal" onclick="if(event.target===this)closeCart()">
+  <div class="modal-box">
+    <div class="modal-header"><h2>🛒 Your Cart</h2><button class="close" onclick="closeCart()">✕</button></div>
+    <div id="cartItems"></div>
+    <div class="cart-total"><span>Total</span><span>₹<span id="totalAmount">0</span></span></div>
+    <button class="primary" onclick="showOrderForm()">Continue to Order</button>
+  </div>
+</div>
+
+<div class="modal" id="orderModal" onclick="if(event.target===this)closeOrderForm()">
+  <div class="modal-box">
+    <div class="modal-header"><h2>Complete Your Order</h2><button class="close" onclick="closeOrderForm()">✕</button></div>
+    <div class="order-details">
+      <div class="detail-row"><span>Order Type</span><strong id="formType"></strong></div>
+      <div class="detail-row"><span>Table</span><strong id="formTable"></strong></div>
+      <div class="detail-row"><span>Items</span><strong id="formItems"></strong></div>
+      <div class="detail-row"><span>Total</span><strong>₹<span id="formTotal"></span></strong></div>
+    </div>
+    <div class="form-group"><label>Special Instructions</label><textarea id="instructions" placeholder="Less spicy, no onion, extra cheese, etc."></textarea></div>
+    <button class="primary" onclick="placeOrder()">✅ Place Order</button>
+  </div>
+</div>
+
+<div class="container confirmation" id="confirmationPage">
+  <div class="success">✓</div><h1 style="margin-top:20px">Order Confirmed!</h1><p style="color:#777;margin-top:8px">Your order has been sent to the restaurant.</p>
+  <div class="token-box"><div style="color:#9ca6b6;font-size:12px">YOUR CUSTOMER TOKEN</div><div class="token" id="customerToken"></div><div>Please remember this token.</div></div>
+  <div class="status"><span>✓ Order Received</span><span id="customerStatus">👨‍🍳 Preparing Soon</span></div>
+  <div class="order-details">
+    <div class="detail-row"><span>Order Type</span><strong id="confirmType"></strong></div>
+    <div class="detail-row"><span>Table</span><strong id="confirmTable"></strong></div>
+    <div class="detail-row"><span>Total Amount</span><strong>₹<span id="confirmAmount"></span></strong></div>
+  </div>
+  <div class="confirm-items"><h3>🍽️ Your Order</h3><div id="confirmedItems"></div></div>
+  <div class="satisfaction">
+    <h3>How was your ordering experience? ❤️</h3><p style="color:#777;margin-top:5px">Your feedback helps us serve you better.</p>
+    <div class="stars">
+      <span class="star" onclick="rate(1)">★</span><span class="star" onclick="rate(2)">★</span><span class="star" onclick="rate(3)">★</span><span class="star" onclick="rate(4)">★</span><span class="star" onclick="rate(5)">★</span>
+    </div>
+    <textarea id="feedback" placeholder="Tell us about your experience..."></textarea>
+    <button class="primary" style="margin-top:10px;background:#151515;color:#fff" onclick="submitFeedback()">Submit Feedback</button>
+    <div class="thank" id="thankYou">❤️ Thank you for your valuable feedback!</div>
+  </div>
+  <button class="primary" style="width:auto;padding:13px 20px" onclick="orderMore()">🍽️ Order More</button>
+</div>
+
+<div class="toast" id="toast"><b id="toastTitle"></b><br><span id="toastMessage"></span></div>
+
+<script>
+const foods=[
+{id:1,name:"Paneer Tikka",category:"Starters",price:180,icon:"🧀",description:"Grilled paneer with Indian spices"},
+{id:2,name:"Veg Manchurian",category:"Starters",price:150,icon:"🥗",description:"Crispy vegetable balls"},
+{id:3,name:"Masala Dosa",category:"South Indian",price:120,icon:"🥞",description:"Crispy dosa with potato masala"},
+{id:4,name:"Idli Sambar",category:"South Indian",price:90,icon:"🍚",description:"Soft idli served with hot sambar"},
+{id:5,name:"Veg Biryani",category:"Main Course",price:190,icon:"🍛",description:"Aromatic basmati rice with vegetables"},
+{id:6,name:"Paneer Butter Masala",category:"Main Course",price:220,icon:"🍲",description:"Paneer in creamy tomato gravy"},
+{id:7,name:"Dal Tadka",category:"Main Course",price:140,icon:"🥘",description:"Yellow dal with Indian spices"},
+{id:8,name:"Butter Naan",category:"Breads",price:50,icon:"🫓",description:"Soft naan topped with butter"},
+{id:9,name:"Tandoori Roti",category:"Breads",price:35,icon:"🫓",description:"Freshly baked tandoori roti"},
+{id:10,name:"Cold Coffee",category:"Drinks",price:110,icon:"☕",description:"Chilled creamy cold coffee"},
+{id:11,name:"Fresh Lime Soda",category:"Drinks",price:70,icon:"🍋",description:"Refreshing fresh lime soda"},
+{id:12,name:"Mango Shake",category:"Drinks",price:130,icon:"🥭",description:"Fresh creamy mango shake"},
+{id:13,name:"Gulab Jamun",category:"Desserts",price:90,icon:"🍩",description:"Soft and delicious Indian dessert"},
+{id:14,name:"Ice Cream",category:"Desserts",price:80,icon:"🍨",description:"Creamy chilled ice cream"},
+{id:15,name:"Chocolate Brownie",category:"Desserts",price:120,icon:"🍫",description:"Warm chocolate brownie"},
+{id:16,name:"Veg Spring Roll",category:"Starters",price:130,icon:"🥟",description:"Crispy vegetable spring rolls"},
+{id:17,name:"Hara Bhara Kabab",category:"Starters",price:160,icon:"🥬",description:"Healthy spinach and vegetable kabab"},
+{id:18,name:"Chole Bhature",category:"Main Course",price:150,icon:"🍽️",description:"Spicy chickpeas with fluffy bhature"}];
+
+let cart=[],selectedTable=1,orderType="Dine In",category="All",rating=0,toastTimer;
+
+for(let i=1;i<=50;i++){let b=document.createElement("button");b.textContent="T"+String(i).padStart(2,"0");if(i===1)b.classList.add("selected");b.onclick=()=>selectTable(i);document.getElementById("tableGrid").appendChild(b)}
+
+function toggleTables(){let e=document.getElementById("tableSelector");e.style.display=e.style.display==="block"?"none":"block"}
+function selectTable(n){
+  selectedTable=n;
+  document.getElementById("currentTable").textContent="TABLE T"+String(n).padStart(2,"0");
+  document.querySelectorAll(".table-grid button").forEach((b,i)=>b.classList.toggle("selected",i===n-1));
+  document.getElementById("tableSelector").style.display="none";
+
+  // Close My Orders when switching tables and immediately re-filter it.
+  closeMyOrders();
+  updateMyOrdersButton();
+  showToast("Table Changed","You selected T"+String(n).padStart(2,"0"));
+}
+function selectOrderType(t){orderType=t;document.getElementById("dineCard").classList.toggle("active",t==="Dine In");document.getElementById("takeCard").classList.toggle("active",t==="Take Away");showToast("Order Type",t)}
+function filterCategory(c,b){category=c;document.querySelectorAll(".category").forEach(x=>x.classList.remove("active"));b.classList.add("active");displayFoods()}
+function clearSearch(){document.getElementById("searchInput").value="";displayFoods()}
+function displayFoods(){
+  let q=document.getElementById("searchInput").value.toLowerCase().trim();
+  document.getElementById("clearBtn").style.display=q?"block":"none";
+  let list=foods.filter(f=>(category==="All"||f.category===category)&&f.name.toLowerCase().includes(q));
+  document.getElementById("itemCount").textContent=list.length+" items available";
+  let g=document.getElementById("foodGrid");g.innerHTML="";
+  if(!list.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">🔎<h3>No dishes found</h3><p>Try another search or category.</p></div>';return}
+  list.forEach(f=>{let c=document.createElement("div");c.className="food-card";c.innerHTML=`<div class="food-image">${f.icon}</div><div class="food-content"><h3>${f.name}</h3><p>${f.description}</p><div class="food-bottom"><div class="price">₹${f.price}</div><button class="add-btn" onclick="addToCart(${f.id})">+ Add</button></div></div>`;g.appendChild(c)})
+}
+function addToCart(id){let f=foods.find(x=>x.id===id),e=cart.find(x=>x.id===id);if(e)e.quantity++;else cart.push({...f,quantity:1});updateCart();showToast("Added to Cart",f.name+" added successfully")}
+function updateCart(){let count=cart.reduce((s,x)=>s+x.quantity,0),amount=cart.reduce((s,x)=>s+x.price*x.quantity,0);document.getElementById("cartCount").textContent=count;document.getElementById("cartAmount").textContent=amount;document.getElementById("totalAmount").textContent=amount;renderCart()}
+function renderCart(){let box=document.getElementById("cartItems");if(!cart.length){box.innerHTML='<div class="empty">🛒<h3>Your cart is empty</h3><p>Add something delicious!</p></div>';return}box.innerHTML=cart.map(x=>`<div class="cart-item"><div class="cart-item-info"><h4>${x.icon} ${x.name}</h4><p>₹${x.price} × ${x.quantity}</p></div><div class="qty"><button onclick="changeQty(${x.id},-1)">−</button><strong>${x.quantity}</strong><button onclick="changeQty(${x.id},1)">+</button></div></div>`).join("")}
+function changeQty(id,v){let x=cart.find(i=>i.id===id);if(!x)return;x.quantity+=v;if(x.quantity<=0)cart=cart.filter(i=>i.id!==id);updateCart()}
+function openCart(){document.getElementById("cartModal").style.display="flex"}
+function closeCart(){document.getElementById("cartModal").style.display="none"}
+function showOrderForm(){if(!cart.length){showToast("Cart Empty","Please add an item first");return}closeCart();document.getElementById("formType").textContent=orderType;document.getElementById("formTable").textContent="T"+String(selectedTable).padStart(2,"0");document.getElementById("formItems").textContent=cart.reduce((s,x)=>s+x.quantity,0);document.getElementById("formTotal").textContent=cart.reduce((s,x)=>s+x.price*x.quantity,0);document.getElementById("orderModal").style.display="flex"}
+function closeOrderForm(){document.getElementById("orderModal").style.display="none"}
+function token(){return "Q"+Math.floor(100+Math.random()*900)}
+function placeOrder(){
+  if(!cart.length)return;
+  let order={token:token(),table:"T"+String(selectedTable).padStart(2,"0"),orderType,items:JSON.parse(JSON.stringify(cart)),total:cart.reduce((s,x)=>s+x.price*x.quantity,0),instructions:document.getElementById("instructions").value.trim(),status:"Order Received",createdAt:new Date().toLocaleString()};
+  let orders=JSON.parse(localStorage.getItem("qroderOrders")||"[]");orders.push(order);localStorage.setItem("qroderOrders",JSON.stringify(orders));localStorage.setItem("lastOrder",JSON.stringify(order));
+  if(window.BroadcastChannel){try{new BroadcastChannel("qroder_live").postMessage({type:"newOrder",order})}catch(e){}}
+  closeOrderForm();document.getElementById("customerPage").style.display="none";document.querySelector(".cart-fab").style.display="none";document.querySelector("header").style.display="none";document.getElementById("confirmationPage").style.display="block";
+  document.getElementById("customerToken").textContent=order.token;document.getElementById("confirmType").textContent=order.orderType;document.getElementById("confirmTable").textContent=order.table;document.getElementById("confirmAmount").textContent=order.total;document.getElementById("confirmedItems").innerHTML=order.items.map(x=>`<div class="confirm-item"><span>${x.icon} ${x.name} × ${x.quantity}</span><strong>₹${x.price*x.quantity}</strong></div>`).join("");localStorage.setItem("customerActiveToken",order.token);
+  updateMyOrdersButton();
+  window.scrollTo({top:0,behavior:"smooth"});
+  showToast("Order Placed",order.token+" sent to kitchen")}
+function rate(n){rating=n;document.querySelectorAll(".star").forEach((s,i)=>s.classList.toggle("selected",i<n))}
+function submitFeedback(){if(!rating){alert("Please select a star rating first.");return}let data={token:localStorage.getItem("customerActiveToken")||"",rating,feedback:document.getElementById("feedback").value.trim(),createdAt:new Date().toLocaleString()};localStorage.setItem("customerFeedback",JSON.stringify(data));document.getElementById("thankYou").style.display="block";showToast("Thank You","Feedback submitted")}
+function orderMore(){cart=[];updateCart();renderMyOrders();updateMyOrdersButton();document.getElementById("confirmationPage").style.display="none";document.getElementById("customerPage").style.display="block";document.querySelector(".cart-fab").style.display="block";document.querySelector("header").style.display="flex";document.getElementById("instructions").value="";document.getElementById("feedback").value="";document.getElementById("thankYou").style.display="none";rating=0;document.querySelectorAll(".star").forEach(s=>s.classList.remove("selected"));window.scrollTo({top:0,behavior:"smooth"})}
+
+/* =========================================================
+   MY ORDERS
+========================================================= */
+function getMyOrders(){
+  try {
+    const allOrders = JSON.parse(localStorage.getItem("qroderOrders") || "[]");
+    const currentTable = "T" + String(selectedTable).padStart(2,"0");
+
+    // IMPORTANT:
+    // A customer/table can only see orders belonging to the currently
+    // selected table. Orders from other tables are never shown here.
+    return allOrders.filter(function(order){
+      return order.table === currentTable;
+    });
+  } catch(e) {
+    return [];
+  }
+}
+
+function getStatusClass(status){
+  if(status === "Preparing") return "preparing";
+  if(status === "Ready") return "ready";
+  if(status === "Completed") return "completed";
+  return "received";
+}
+
+function getStatusIndex(status){
+  if(status === "Preparing") return 1;
+  if(status === "Ready") return 2;
+  if(status === "Completed") return 3;
+  return 0;
+}
+
+function updateMyOrdersButton(){
+  const button = document.getElementById("myOrdersButton");
+  if(!button) return;
+
+  const orders = getMyOrders();
+  const hasOrders = orders.length > 0;
+
+  // My Orders is hidden until this table has placed at least one order.
+  button.style.display = hasOrders ? "block" : "none";
+  document.getElementById("myOrdersCount").textContent = orders.length;
+}
+
+function renderMyOrders(){
+  const orders = getMyOrders().slice().reverse();
+  const list = document.getElementById("myOrdersList");
+  const count = document.getElementById("myOrdersCount");
+
+  count.textContent = orders.length;
+  updateMyOrdersButton();
+
+  if(!orders.length){
+    list.innerHTML = `
+      <div class="my-orders-empty">
+        <div style="font-size:45px">📋</div>
+        <h3>No orders yet</h3>
+        <p style="margin-top:6px">Your orders will appear here after you place one.</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = orders.map(function(order){
+    const status = order.status || "Order Received";
+    const current = getStatusIndex(status);
+    const items = (order.items || []).map(function(item){
+      return `${item.icon || "🍽️"} ${item.name} × ${item.quantity}`;
+    }).join("<br>");
+
+    return `
+      <div class="my-order-card">
+        <div class="my-order-top">
+          <div>
+            <div class="my-order-token">${order.token}</div>
+            <small style="color:#777">${order.createdAt || ""}</small>
+          </div>
+          <span class="my-order-status ${getStatusClass(status)}">${status}</span>
+        </div>
+
+        <div class="my-order-meta">
+          <div>🎟️ Token: <strong>${order.token}</strong></div>
+          <div>🪑 Table: <strong>${order.table}</strong></div>
+          <div>🍽️ Type: <strong>${order.orderType}</strong></div>
+          <div>💰 Total: <strong>₹${order.total}</strong></div>
+        </div>
+
+        <div class="order-progress">
+          <div class="progress-step ${current >= 0 ? "done" : ""}">Received</div>
+          <div class="progress-step ${current >= 1 ? "done" : ""}">Preparing</div>
+          <div class="progress-step ${current >= 2 ? "done" : ""}">Ready</div>
+          <div class="progress-step ${current >= 3 ? "done" : ""}">Completed</div>
+        </div>
+
+        <div class="my-order-items">${items}</div>
+        <div class="my-order-total">
+          <span>Order Total</span>
+          <span>₹${order.total}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function openMyOrders(){
+  renderMyOrders();
+  document.getElementById("myOrdersModal").style.display = "flex";
+}
+
+function closeMyOrders(){
+  document.getElementById("myOrdersModal").style.display = "none";
+}
+
+/* Refresh My Orders when the owner changes an order status. */
+if(window.BroadcastChannel){
+  try{
+    let myOrdersChannel = new BroadcastChannel("qroder_live");
+    myOrdersChannel.onmessage = function(event){
+      if(event.data && (event.data.type === "status" || event.data.type === "newOrder")){
+        renderMyOrders();
+        updateMyOrdersButton();
+
+        const activeToken = localStorage.getItem("customerActiveToken");
+        if(event.data.type === "status" && activeToken === event.data.token){
+          const statusElement = document.getElementById("customerStatus");
+          if(statusElement){
+            statusElement.textContent = "👨‍🍳 " + event.data.status;
+          }
+        }
+      }
+    };
+  }catch(e){}
+}
+
+/* Update immediately when another tab changes localStorage. */
+window.addEventListener("storage", function(event){
+  if(event.key === "qroderOrders" || event.key === "qroderStatus"){
+    renderMyOrders();
+
+    if(event.key === "qroderStatus"){
+      try{
+        const data = JSON.parse(event.newValue || "null");
+        const activeToken = localStorage.getItem("customerActiveToken");
+        if(data && data.token === activeToken){
+          const statusElement = document.getElementById("customerStatus");
+          if(statusElement){
+            statusElement.textContent = "👨‍🍳 " + data.status;
+          }
+        }
+      }catch(e){}
+    }
+  }
+});
+
+function showToast(t,m){let x=document.getElementById("toast");document.getElementById("toastTitle").textContent=t;document.getElementById("toastMessage").textContent=m;x.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>x.classList.remove("show"),2200)}
+
+if(window.BroadcastChannel){try{let ch=new BroadcastChannel("qroder_live");ch.onmessage=e=>{if(e.data.type==="status"){let active=localStorage.getItem("customerActiveToken");if(active===e.data.token)document.getElementById("customerStatus").textContent="👨‍🍳 "+e.data.status}}}catch(e){}}
+window.addEventListener("storage",e=>{if(e.key==="qroderStatus"){let d=JSON.parse(e.newValue||"null"),active=localStorage.getItem("customerActiveToken");if(d&&d.token===active)document.getElementById("customerStatus").textContent="👨‍🍳 "+d.status}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeCart();closeOrderForm();closeMyOrders()}});
+displayFoods();updateCart();renderMyOrders();updateMyOrdersButton();
+</script>
+</body>
+</html>
