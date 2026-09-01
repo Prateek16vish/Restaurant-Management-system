@@ -5,6 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QROrder | Owner Dashboard</title>
 <style>
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 500px;
+    padding: 25px;
+    border-radius: 12px;
+}
+
+.modal-content label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.modal-content textarea {
+    min-height: 80px;
+}
+
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,Helvetica,sans-serif;background:#f5f6f8;color:#151515}
 button,input,select{font:inherit}button{cursor:pointer}
@@ -64,7 +104,12 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
 <section class="page" id="kitchen">
   <div class="heading"><div><h1>Kitchen Dashboard</h1><p>Live order queue for kitchen staff.</p></div><button class="refresh" onclick="renderKitchen()">↻ Refresh</button></div>
   <div class="filters">
-    <button class="active" onclick="setKitchenFilter('All',this)">All</button>
+    <button 
+        class="active" 
+        onclick="setKitchenFilter('All',this)">
+        All
+    </button>
+
     <button
         onclick="setKitchenFilter('PENDING',this)">
         New
@@ -93,8 +138,42 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
 </section>
 
 <section class="page" id="menu">
-  <div class="heading"><div><h1>Menu</h1><p>Current customer-facing menu.</p></div></div>
-  <div class="panel"><table><thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Status</th></tr></thead><tbody id="menuRows"></tbody></table></div>
+
+  <div class="heading">
+
+    <div>
+      <h1>Menu</h1>
+      <p>Current customer-facing menu.</p>
+    </div>
+
+    <button
+      class="refresh"
+      onclick="openAddMenuModal()">
+      + Add Menu Item
+    </button>
+
+  </div>
+
+  <div class="panel">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody id="menuRows"></tbody>
+
+    </table>
+
+  </div>
+
 </section>
 
 <section class="page" id="feedback">
@@ -133,6 +212,7 @@ const foods=[
 let kitchenFilter="All";
 
 let backendOrders = [];
+let backendMenuItems = [];
 
 async function getOrders() {
 
@@ -158,6 +238,36 @@ async function getOrders() {
         );
 
         return backendOrders;
+    }
+}
+
+async function getMenuItems() {
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/menu-items`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "Failed to load menu items"
+            );
+        }
+
+        backendMenuItems =
+            await response.json();
+
+        return backendMenuItems;
+
+    } catch (error) {
+
+        console.error(
+            "Menu API error:",
+            error
+        );
+
+        return backendMenuItems;
     }
 }
 
@@ -370,7 +480,80 @@ async function setStatus(orderId, status) {
       }
   }
 
-function renderMenu(){document.getElementById("menuRows").innerHTML=foods.map(f=>`<tr><td>${f[0]}</td><td>${f[1]}</td><td>₹${f[2]}</td><td><span class="badge">Available</span></td></tr>`).join("")}
+async function renderMenu() {
+
+    const menuItems = await getMenuItems();
+
+    const table = document.getElementById("menuRows");
+
+    if (!menuItems.length) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="5">
+                    <div class="empty">
+                        No menu items found.
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    table.innerHTML = menuItems.map(item => `
+
+        <tr>
+
+            <td>
+                ${item.name}
+            </td>
+
+            <td>
+                ${item.category}
+            </td>
+
+            <td>
+                ₹${item.price}
+            </td>
+
+            <td>
+
+                <span class="badge">
+
+                    ${item.available
+                        ? "Available"
+                        : "Unavailable"}
+
+                </span>
+
+            </td>
+
+            <td>
+
+                <button
+                    class="refresh"
+                    onclick="openEditMenuModal(${item.id})">
+
+                    ✏️ Edit
+
+                </button>
+
+                <button
+                    class="refresh"
+                    onclick="deleteMenuItem(${item.id}, '${item.name.replace(/'/g, "\\'")}')">
+
+                    🗑️ Delete
+
+                </button>
+
+            </td>
+
+        </tr>
+
+    `).join("");
+}
+
 function renderFeedback(){let f=JSON.parse(localStorage.getItem("customerFeedback")||"null");document.getElementById("feedbackPanel").innerHTML=f?`<h3>Latest Feedback</h3><p style="margin-top:10px">Token: <b>${f.token||"—"}</b></p><p>Rating: <b>${"★".repeat(f.rating)}${"☆".repeat(5-f.rating)}</b></p><p style="margin-top:8px">${f.feedback||"No written comment."}</p><p style="margin-top:8px;color:#777">${f.createdAt}</p>`:'<div class="empty">No feedback submitted yet.</div>'}
 
 async function renderTables() {
@@ -417,6 +600,423 @@ async function renderTables() {
         html;
 }
 
+function openAddMenuModal() {
+
+    document.getElementById("addMenuModal").style.display = "flex";
+
+}
+
+function closeAddMenuModal() {
+
+    document.getElementById("addMenuModal").style.display = "none";
+
+}
+
+function closeEditMenuModal() {
+
+    document.getElementById("editMenuModal")
+        .style.display = "none";
+}
+
+async function updateMenuItem() {
+
+    const id =
+        document.getElementById("editMenuId")
+            .value;
+
+    const name =
+        document.getElementById("editMenuName")
+            .value.trim();
+
+    const description =
+        document.getElementById("editMenuDescription")
+            .value.trim();
+
+    const category =
+        document.getElementById("editMenuCategory")
+            .value.trim();
+
+    const price =
+        Number(
+            document.getElementById("editMenuPrice")
+                .value
+        );
+
+    const available =
+        document.getElementById("editMenuAvailable")
+            .value === "true";
+
+
+    if (!name) {
+
+        showToast(
+            "Missing Name",
+            "Please enter item name"
+        );
+
+        return;
+    }
+
+
+    if (!category) {
+
+        showToast(
+            "Missing Category",
+            "Please enter category"
+        );
+
+        return;
+    }
+
+
+    if (!price || price <= 0) {
+
+        showToast(
+            "Invalid Price",
+            "Please enter a valid price"
+        );
+
+        return;
+    }
+
+
+    const requestBody = {
+
+        name: name,
+
+        description: description,
+
+        category: category,
+
+        price: price,
+
+        available: available,
+
+        cafe: {
+            id: 2
+        }
+    };
+
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/menu-items/${id}`,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(requestBody)
+            }
+        );
+
+
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+            throw new Error(
+                errorText ||
+                "Failed to update menu item"
+            );
+        }
+
+
+        const updatedItem =
+            await response.json();
+
+
+        showToast(
+            "Menu Updated",
+            `${updatedItem.name} updated successfully`
+        );
+
+
+        closeEditMenuModal();
+
+        await renderMenu();
+
+
+    } catch (error) {
+
+        console.error(
+            "Update menu error:",
+            error
+        );
+
+        showToast(
+            "Update Failed",
+            error.message
+        );
+    }
+}
+
+async function openEditMenuModal(id) {
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/menu-items/${id}`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "Failed to load menu item"
+            );
+        }
+
+        const item = await response.json();
+
+        document.getElementById("editMenuId")
+            .value = item.id;
+
+        document.getElementById("editMenuName")
+            .value = item.name || "";
+
+        document.getElementById("editMenuDescription")
+            .value = item.description || "";
+
+        document.getElementById("editMenuCategory")
+            .value = item.category || "";
+
+        document.getElementById("editMenuPrice")
+            .value = item.price || "";
+
+        document.getElementById("editMenuAvailable")
+            .value = item.available
+                ? "true"
+                : "false";
+
+        document.getElementById("editMenuModal")
+            .style.display = "flex";
+
+    } catch (error) {
+
+        console.error(
+            "Edit menu load error:",
+            error
+        );
+
+        showToast(
+            "Edit Failed",
+            error.message
+        );
+    }
+}
+
+async function deleteMenuItem(id, name) {
+
+    const confirmed = confirm(
+        `Are you sure you want to delete "${name}"?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/menu-items/${id}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+            throw new Error(
+                errorText ||
+                "Failed to delete menu item"
+            );
+        }
+
+
+        showToast(
+            "Menu Item Deleted",
+            `${name} deleted successfully`
+        );
+
+
+        await renderMenu();
+
+
+    } catch (error) {
+
+        console.error(
+            "Delete menu error:",
+            error
+        );
+
+        showToast(
+            "Delete Failed",
+            error.message
+        );
+    }
+}
+
+async function addMenuItem() {
+
+    const name =
+        document.getElementById("addMenuName")
+            .value.trim();
+
+    const description =
+        document.getElementById("addMenuDescription")
+            .value.trim();
+
+    const category =
+        document.getElementById("addMenuCategory")
+            .value.trim();
+
+    const price =
+        Number(
+            document.getElementById("addMenuPrice")
+                .value
+        );
+
+    const available =
+        document.getElementById("addMenuAvailable")
+            .value === "true";
+
+
+    if (!name) {
+
+        showToast(
+            "Missing Name",
+            "Please enter menu item name"
+        );
+
+        return;
+    }
+
+
+    if (!category) {
+
+        showToast(
+            "Missing Category",
+            "Please enter category"
+        );
+
+        return;
+    }
+
+
+    if (!price || price <= 0) {
+
+        showToast(
+            "Invalid Price",
+            "Please enter a valid price"
+        );
+
+        return;
+    }
+
+
+    const requestBody = {
+
+        name: name,
+
+        description: description,
+
+        category: category,
+
+        price: price,
+
+        available: available,
+
+        cafe: {
+            id: 2
+        }
+
+    };
+
+
+    console.log(
+        "Creating menu item:",
+        requestBody
+    );
+
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/menu-items`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(requestBody)
+            }
+        );
+
+
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+            throw new Error(
+                errorText ||
+                "Failed to create menu item"
+            );
+        }
+
+
+        const savedItem =
+            await response.json();
+
+
+        console.log(
+            "Menu item created:",
+            savedItem
+        );
+
+
+        showToast(
+            "Menu Item Added",
+            `${savedItem.name} added successfully`
+        );
+
+
+        closeAddMenuModal();
+
+
+        await renderMenu();
+
+
+    } catch (error) {
+
+        console.error(
+            "Add menu item error:",
+            error
+        );
+
+
+        showToast(
+            "Add Failed",
+            error.message
+        );
+
+    }
+}
+
 async function renderAll() {
 
       await renderOverview();
@@ -425,7 +1025,7 @@ async function renderAll() {
 
       await renderOrders();
 
-      renderMenu();
+      await renderMenu();
 
       renderFeedback();
 
@@ -440,5 +1040,160 @@ window.addEventListener("storage",()=>renderAll());
 renderAll();
 setInterval(renderAll,2000);
 </script>
+
+<div id="addMenuModal"
+     class="modal"
+     style="display:none;">
+
+    <div class="modal-content">
+
+        <h2>Add Menu Item</h2>
+
+        <label>
+            Name
+        </label>
+
+        <input
+            type="text"
+            id="addMenuName"
+            placeholder="e.g. Farmhouse Pizza">
+
+        <label>
+            Description
+        </label>
+
+        <textarea
+            id="addMenuDescription"
+            placeholder="Enter description"></textarea>
+
+        <label>
+            Category
+        </label>
+
+        <input
+            type="text"
+            id="addMenuCategory"
+            placeholder="e.g. Pizza">
+
+        <label>
+            Price
+        </label>
+
+        <input
+            type="number"
+            id="addMenuPrice"
+            placeholder="299"
+            min="0">
+
+        <label>
+            Availability
+        </label>
+
+        <select id="addMenuAvailable">
+
+            <option value="true">
+                Available
+            </option>
+
+            <option value="false">
+                Unavailable
+            </option>
+
+        </select>
+
+        <div style="margin-top:20px;">
+
+            <button
+                class="refresh"
+                onclick="addMenuItem()">
+                Save Item
+            </button>
+
+            <button
+                class="refresh"
+                onclick="closeAddMenuModal()">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="editMenuModal"
+     class="modal"
+     style="display:none;">
+
+    <div class="modal-content">
+
+        <h2>Edit Menu Item</h2>
+
+        <input
+            type="hidden"
+            id="editMenuId">
+
+        <label>Name</label>
+
+        <input
+            type="text"
+            id="editMenuName">
+
+        <label>Description</label>
+
+        <textarea
+            id="editMenuDescription"></textarea>
+
+        <label>Category</label>
+
+        <input
+            type="text"
+            id="editMenuCategory">
+
+        <label>Price</label>
+
+        <input
+            type="number"
+            id="editMenuPrice"
+            min="1">
+
+        <label>Availability</label>
+
+        <select id="editMenuAvailable">
+
+            <option value="true">
+                Available
+            </option>
+
+            <option value="false">
+                Unavailable
+            </option>
+
+        </select>
+
+        <div style="margin-top:20px;">
+
+            <button
+                class="refresh"
+                onclick="updateMenuItem()">
+
+                Save Changes
+
+            </button>
+
+            <button
+                class="refresh"
+                onclick="closeEditMenuModal()">
+
+                Cancel
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
 </body>
 </html>
